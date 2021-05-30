@@ -1,4 +1,4 @@
-# vimvar-rs: Library to read neovim/vim variables from Rust
+## vimvar-rs: Library to read neovim/vim variables from Rust
 
 [![Build Status][build_img]][build_lnk]
 [![Crates.io][crates_img]][crates_lnk]

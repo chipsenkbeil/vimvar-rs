@@ -32,6 +32,14 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: ${{ matrix.rust }}
+      - name: Install neovim (stable)
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+      - name: Install vim (stable)
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: false
       - name: Check Cargo availability
         run: cargo --version
       - run: cargo test --verbose
