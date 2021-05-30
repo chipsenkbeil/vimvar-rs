@@ -1,0 +1,13 @@
+[package]
+name = "vimvar"
+version = "0.1.0"
+authors = ["Chip Senkbeil <chip@senkbeil.org>"]
+edition = "2018"
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+shellexpand = "2.1.0"
+
+[dev-dependencies]
+tempfile = "3.2.0"
