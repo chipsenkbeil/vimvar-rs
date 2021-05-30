@@ -303,12 +303,42 @@ impl<Name: AsRef<str>> VimVar<Name> {
         // TODO: Support windows here (won't have sh)
         let output = Command::new("sh").arg("-c").arg(full_cmd).output()?;
 
+        // If our program failed, we want to report the failure
+        //
+        // NOTE: vim seems to return exit code 1; so, for now we'll ignore
+        //       that specific exit code if our cmd is vim
+        if !output.status.success() && (output.status.code() != Some(1) || cmd != Cmd::Vim) {
+            let code = output
+                .status
+                .code()
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| String::from("--"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!(
+                    "[Exit code {}]: {}",
+                    code,
+                    String::from_utf8_lossy(&output.stderr).trim()
+                )
+                .as_str(),
+            ));
+        }
+
         // NOTE: If using neovim's --headless option, the output appears on
         //       stderr whereas using the redir approach places output on stdout
         let output_string = match self.cmd {
             Cmd::Vim => String::from_utf8_lossy(&output.stdout),
             Cmd::Neovim => String::from_utf8_lossy(&output.stderr),
         };
+
+        // Report a better error than the serde one if the output was empty
+        if output_string.trim().is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Result from {} was empty", self.cmd),
+            ));
+        }
 
         let value: Value = serde_json::from_str(output_string.trim()).map_err(io::Error::from)?;
 
