@@ -1,8 +1,13 @@
 [package]
 name = "vimvar"
+description = "Library that provides ability to read neovim/vim variables"
 version = "0.1.0"
 authors = ["Chip Senkbeil <chip@senkbeil.org>"]
 edition = "2018"
+homepage = "https://github.com/chipsenkbeil/vimvar-rs"
+repository = "https://github.com/chipsenkbeil/vimvar-rs"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 serde = "1.0"
