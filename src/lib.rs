@@ -212,20 +212,14 @@ impl<Name: AsRef<str>> VimVar<Name> {
     ///
     /// ### Notes
     ///
-    /// * If using vim, will leverage [`utils::find_vimrc`] to load in the
-    ///   appropriate vimrc during ex mode
-    /// * If using neovim, headless mode should load the user's vimrc
+    /// * Will leverage [`utils::find_vimrc`] to load in the appropriate vimrc
+    ///   during ex mode
     /// * If `allow_zero` is true, then a value of 0 is considered the value of
     ///   the variable rather than vim's default of not being found
     pub fn load(&self, allow_zero: bool) -> io::Result<Option<Value>> {
-        match self.cmd {
-            Cmd::Neovim => self.load_with_config("", allow_zero),
-            Cmd::Vim => {
-                let vimrc = utils::find_vimrc()
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "vimrc not found"))?;
-                self.load_with_config(vimrc, allow_zero)
-            }
-        }
+        let vimrc = utils::find_vimrc()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "vimrc not found"))?;
+        self.load_with_config(vimrc, allow_zero)
     }
 
     /// Loads variable with [`Self::load_with_config`] and then attempts to
@@ -255,8 +249,7 @@ impl<Name: AsRef<str>> VimVar<Name> {
     ///
     /// * Spawns a vim process whose goal is to print out the contents of a
     ///   variable as a JSON string
-    /// * vim leverages batch & ex modes with redir to execute and capture output
-    /// * neovim leverages headless mode to execute and capture output
+    /// * Leverages batch & ex modes with redir to execute and capture output
     /// * Relies on the variable being available upon loading vim configs
     /// * If `allow_zero` is true, then a value of 0 is considered the value of
     ///   the variable rather than vim's default of not being found
@@ -269,35 +262,21 @@ impl<Name: AsRef<str>> VimVar<Name> {
         let scope = self.scope.as_str();
         let var = self.name.as_ref();
 
-        let full_cmd = match cmd {
-            Cmd::Neovim if config.as_ref().as_os_str().is_empty() => format!(
-                r#"{} --headless -i NONE '+echon json_encode(get({}, "{}"))' '+qa!'"#,
-                cmd, scope, var,
-            ),
-            Cmd::Neovim => format!(
-                r#"{} --headless -i NONE -u "{}" '+echon json_encode(get({}, "{}"))' '+qa!'"#,
+        let full_cmd = {
+            if config.as_ref().as_os_str().is_empty() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "path to vimrc is required for neovim/vim",
+                ));
+            }
+
+            format!(
+                r#"{} -Es -i NONE -u "{}" '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
                 cmd,
                 config.as_ref().to_string_lossy(),
                 scope,
                 var,
-            ),
-            Cmd::Vim => {
-                // NOTE: We require a config for vim, so fail if we don't have one
-                if config.as_ref().as_os_str().is_empty() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "path to vimrc is required for vim",
-                    ));
-                }
-
-                format!(
-                    r#"{} -Es -i NONE -u "{}" '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
-                    cmd,
-                    config.as_ref().to_string_lossy(),
-                    scope,
-                    var,
-                )
-            }
+            )
         };
 
         // TODO: Support windows here (won't have sh)
@@ -325,12 +304,7 @@ impl<Name: AsRef<str>> VimVar<Name> {
             ));
         }
 
-        // NOTE: If using neovim's --headless option, the output appears on
-        //       stderr whereas using the redir approach places output on stdout
-        let output_string = match self.cmd {
-            Cmd::Vim => String::from_utf8_lossy(&output.stdout),
-            Cmd::Neovim => String::from_utf8_lossy(&output.stderr),
-        };
+        let output_string = String::from_utf8_lossy(&output.stdout);
 
         // Report a better error than the serde one if the output was empty
         if output_string.trim().is_empty() {
@@ -340,7 +314,6 @@ impl<Name: AsRef<str>> VimVar<Name> {
             ));
         }
 
-        // let value: Value = serde_json::from_str(output_string.trim()).map_err(io::Error::from)?;
         let value: Value = serde_json::from_str(output_string.trim()).map_err(|_| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
