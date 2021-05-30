@@ -297,9 +297,9 @@ impl<Name: AsRef<str>> VimVar<Name> {
 
         // If our program failed, we want to report the failure
         //
-        // NOTE: vim seems to return exit code 1; so, for now we'll ignore
-        //       that specific exit code if our cmd is vim
-        if !output.status.success() && (output.status.code() != Some(1) || cmd != Cmd::Vim) {
+        // NOTE: neovim/vim seems to return exit code 1; so, for now we'll
+        //       ignore that specific exit code for now
+        if !output.status.success() && (output.status.code() != Some(1)) {
             let code = output
                 .status
                 .code()
