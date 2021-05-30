@@ -270,8 +270,21 @@ impl<Name: AsRef<str>> VimVar<Name> {
                 ));
             }
 
+            // NOTE: We have a lot of settings being applied, so documenting
+            //       them here
+            //
+            //       1. -Es is our silent, batch, ex mode
+            //       2. -i NONE removes shada/viminfo file reading and writing
+            //       3. -u "{}" loads our vimrc, which is required as -Es does
+            //          not load vim scripts by default
+            //       4. +set nonumber is used to turn off line numbers, which
+            //          are getting picked up by neovim/vim in vimrc configs
+            //          and showing up in output
+            //       5. redir writes to a register our message (json) and then
+            //          places it in our buffer
+            //       6. prints out the content in our buffer (current line)
             format!(
-                r#"{} -Es -i NONE -u "{}" '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
+                r#"{} -Es -i NONE -u "{}" '+set nonumber' '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
                 cmd,
                 config.as_ref().to_string_lossy(),
                 scope,
