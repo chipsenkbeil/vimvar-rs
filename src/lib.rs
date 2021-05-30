@@ -340,7 +340,13 @@ impl<Name: AsRef<str>> VimVar<Name> {
             ));
         }
 
-        let value: Value = serde_json::from_str(output_string.trim()).map_err(io::Error::from)?;
+        // let value: Value = serde_json::from_str(output_string.trim()).map_err(io::Error::from)?;
+        let value: Value = serde_json::from_str(output_string.trim()).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Failed to parse as JSON: \"{}\"", output_string.trim()),
+            )
+        })?;
 
         if !allow_zero && value == serde_json::json!(0) {
             Ok(None)
