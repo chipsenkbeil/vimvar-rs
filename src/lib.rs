@@ -291,7 +291,7 @@ impl<Name: AsRef<str>> VimVar<Name> {
                 }
 
                 format!(
-                    r#"{} -Es -u "{}" '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
+                    r#"{} -Es -i NONE -u "{}" '+redir => m | echon json_encode(get({}, "{}")) | redir END | put=m' '+%p' '+qa!'"#,
                     cmd,
                     config.as_ref().to_string_lossy(),
                     scope,
