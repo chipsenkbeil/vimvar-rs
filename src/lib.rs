@@ -271,11 +271,11 @@ impl<Name: AsRef<str>> VimVar<Name> {
 
         let full_cmd = match cmd {
             Cmd::Neovim if config.as_ref().as_os_str().is_empty() => format!(
-                r#"{} --headless '+echon json_encode(get({}, "{}"))' '+qa!'"#,
+                r#"{} --headless -i NONE '+echon json_encode(get({}, "{}"))' '+qa!'"#,
                 cmd, scope, var,
             ),
             Cmd::Neovim => format!(
-                r#"{} --headless -u "{}" '+echon json_encode(get({}, "{}"))' '+qa!'"#,
+                r#"{} --headless -i NONE -u "{}" '+echon json_encode(get({}, "{}"))' '+qa!'"#,
                 cmd,
                 config.as_ref().to_string_lossy(),
                 scope,
