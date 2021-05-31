@@ -18,7 +18,7 @@
 ```toml
 # Cargo.toml
 [dependencies]
-vimvar = "0.1"
+vimvar = "0.2"
 ```
 
 ### Usage
