@@ -24,14 +24,26 @@ vimvar = "0.2"
 ### Usage
 
 ```rust
-use vimvar::VimVar;
-
 // Loads g:my_global_var from default vimrc, returning None if it does not
 // exist, and casting to type String from the default serde_json::Value
 //
 // Only fails unwrap if neovim/vim fails to run or type fails to cast
-let var: Option<String> = VimVar::load_typed_global_var("my_global_var").unwrap();
+let var: Option<String> = vimvar::load_typed_global_var("my_global_var").unwrap();
 println!("Loaded g:my_global_var = {:?}", var);
+```
+
+For more a more explicit example
+
+```rust
+use vimvar::*;
+use serde_json::json;
+
+// Load explicitly a buffer variable (b:my_buffer_var) using neovim
+let var = VimVar::new(Cmd::NeoVim, Scope::Buffer, "my_buffer_var");
+
+// Load the variable using a different config file versus the standard one
+let value = var.load_with_config("path/to/config.vim", false).expect("Failed to load variable");
+assert_eq!(value, Some(json!("some buffer value")));
 ```
 
 ### License
