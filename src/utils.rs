@@ -49,8 +49,8 @@ fn has_on_path(cmd: &str) -> bool {
 ///
 /// Looks for a vimrc configuration file in the following places:
 ///
-/// * `$XDG_CONFIG_HOME/nvim/init.vim`
-/// * `~/.config/nvim/init.vim`
+/// * `$XDG_CONFIG_HOME/nvim/init.vim` (or `init.lua`)
+/// * `~/.config/nvim/init.vim` (or `init.lua`)
 /// * `~/.vimrc`
 /// * `~/.vim/vimrc`
 ///
@@ -58,8 +58,8 @@ fn has_on_path(cmd: &str) -> bool {
 ///
 /// Looks for a vimrc configuration file in the following places:
 ///
-/// * `$XDG_CONFIG_HOME/nvim/init.vim`
-/// * `~/AppData/Local/nvim/init.vim`
+/// * `$XDG_CONFIG_HOME/nvim/init.vim` (or `init.lua`)
+/// * `~/AppData/Local/nvim/init.vim` (or `init.lua`)
 /// * `~/_vimrc`
 /// * `~/vimfiles/vimrc`
 /// * `$VIM/_vimrc`
@@ -68,7 +68,7 @@ fn has_on_path(cmd: &str) -> bool {
 ///
 /// Looks for a vimrc configuration file in the following places:
 ///
-/// * `$XDG_CONFIG_HOME/nvim/init.vim`
+/// * `$XDG_CONFIG_HOME/nvim/init.vim` (or `init.lua`)
 pub fn find_vimrc() -> Option<PathBuf> {
     let xdg_config_home = shellexpand::env("$XDG_CONFIG_HOME");
 
@@ -168,6 +168,29 @@ pub fn find_vimrc() -> Option<PathBuf> {
             _ => None,
         })
     } else {
-        None
+        vec![
+            // $XDG_CONFIG_HOME/nvim/init.lua
+            xdg_config_home
+                .as_ref()
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.lua"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+            // $XDG_CONFIG_HOME/nvim/init.vim
+            xdg_config_home
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.vim"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+        ]
+        .into_iter()
+        .find_map(|maybe_path| match maybe_path {
+            Some(path) if path.exists() => Some(path),
+            _ => None,
+        })
     }
 }
