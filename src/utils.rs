@@ -43,7 +43,7 @@ fn has_on_path(cmd: &str) -> bool {
 }
 
 /// Performs search to find vimrc based on platform, returning first valid
-/// vimrc found
+/// vimrc found. Will check for both `init.vim` and `init.lua` file types.
 ///
 /// ### Unix
 ///
@@ -74,50 +74,99 @@ pub fn find_vimrc() -> Option<PathBuf> {
 
     if cfg!(unix) {
         let home = shellexpand::tilde("~");
-        let path1 = xdg_config_home.map(|home| {
-            [home.as_ref(), "nvim", "init.vim"]
-                .iter()
-                .collect::<PathBuf>()
-        });
-        let path2 = [home.as_ref(), ".config", "nvim", "init.vim"]
-            .iter()
-            .collect::<PathBuf>();
-        let path3 = [home.as_ref(), ".vimrc"].iter().collect::<PathBuf>();
-        let path4 = [home.as_ref(), ".vim", "vimrc"].iter().collect::<PathBuf>();
 
-        match (path1, path2, path3, path4) {
-            (Ok(path), _, _, _) if path.exists() => Some(path),
-            (_, path, _, _) if path.exists() => Some(path),
-            (_, _, path, _) if path.exists() => Some(path),
-            (_, _, _, path) if path.exists() => Some(path),
+        vec![
+            // $XDG_CONFIG_HOME/nvim/init.lua
+            xdg_config_home
+                .as_ref()
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.lua"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+            // $XDG_CONFIG_HOME/nvim/init.vim
+            xdg_config_home
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.vim"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+            // $HOME/.config/nvim/init.lua
+            Some(
+                [home.as_ref(), ".config", "nvim", "init.lua"]
+                    .iter()
+                    .collect::<PathBuf>(),
+            ),
+            // $HOME/.config/nvim/init.vim
+            Some(
+                [home.as_ref(), ".config", "nvim", "init.vim"]
+                    .iter()
+                    .collect::<PathBuf>(),
+            ),
+            // $HOME/.vimrc
+            Some([home.as_ref(), ".vimrc"].iter().collect::<PathBuf>()),
+            // $HOME/.vim/.vimrc
+            Some([home.as_ref(), ".vim", "vimrc"].iter().collect::<PathBuf>()),
+        ]
+        .into_iter()
+        .find_map(|maybe_path| match maybe_path {
+            Some(path) if path.exists() => Some(path),
             _ => None,
-        }
+        })
     } else if cfg!(windows) {
         let home = shellexpand::tilde("~");
         let vim_env = shellexpand::env("$VIM");
 
-        let path1 = xdg_config_home.map(|home| {
-            [home.as_ref(), "nvim", "init.vim"]
-                .iter()
-                .collect::<PathBuf>()
-        });
-        let path2 = [home.as_ref(), "AppData", "Local", "nvim", "init.vim"]
-            .iter()
-            .collect::<PathBuf>();
-        let path3 = [home.as_ref(), "_vimrc"].iter().collect::<PathBuf>();
-        let path4 = [home.as_ref(), "vimfiles", "vimrc"]
-            .iter()
-            .collect::<PathBuf>();
-        let path5 = vim_env.map(|vim| [vim.as_ref(), "_vimrc"].iter().collect::<PathBuf>());
-
-        match (path1, path2, path3, path4, path5) {
-            (Ok(path), _, _, _, _) if path.exists() => Some(path),
-            (_, path, _, _, _) if path.exists() => Some(path),
-            (_, _, path, _, _) if path.exists() => Some(path),
-            (_, _, _, path, _) if path.exists() => Some(path),
-            (_, _, _, _, Ok(path)) if path.exists() => Some(path),
+        vec![
+            // $XDG_CONFIG_HOME/nvim/init.lua
+            xdg_config_home
+                .as_ref()
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.lua"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+            // $XDG_CONFIG_HOME/nvim/init.vim
+            xdg_config_home
+                .map(|home| {
+                    [home.as_ref(), "nvim", "init.vim"]
+                        .iter()
+                        .collect::<PathBuf>()
+                })
+                .ok(),
+            // $HOME/AppData/Local/nvim/init.lua
+            Some(
+                [home.as_ref(), "AppData", "Local", "nvim", "init.lua"]
+                    .iter()
+                    .collect::<PathBuf>(),
+            ),
+            // $HOME/AppData/Local/nvim/init.vim
+            Some(
+                [home.as_ref(), "AppData", "Local", "nvim", "init.vim"]
+                    .iter()
+                    .collect::<PathBuf>(),
+            ),
+            // $HOME/_vimrc
+            Some([home.as_ref(), "_vimrc"].iter().collect::<PathBuf>()),
+            // $HOME/vimfiles/vimrc
+            Some(
+                [home.as_ref(), "vimfiles", "vimrc"]
+                    .iter()
+                    .collect::<PathBuf>(),
+            ),
+            // $VIM/_vimrc
+            vim_env
+                .map(|vim| [vim.as_ref(), "_vimrc"].iter().collect::<PathBuf>())
+                .ok(),
+        ]
+        .into_iter()
+        .find_map(|maybe_path| match maybe_path {
+            Some(path) if path.exists() => Some(path),
             _ => None,
-        }
+        })
     } else {
         None
     }
