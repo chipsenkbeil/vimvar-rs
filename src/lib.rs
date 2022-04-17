@@ -1,3 +1,6 @@
+/// Contains functions to search for relevant config files
+pub mod search;
+
 /// Contains utility functions useful for neovim/vim operations
 pub mod utils;
 

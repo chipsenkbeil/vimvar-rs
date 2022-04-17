@@ -1,4 +1,4 @@
-use crate::utils;
+use crate::search;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::{fmt, io, path::Path, process::Command};
@@ -56,12 +56,12 @@ impl<Name: AsRef<str>> VimVar<Name> {
     ///
     /// ### Notes
     ///
-    /// * Will leverage [`utils::find_vimrc`] to load in the appropriate vimrc
+    /// * Will leverage [`search::find_vimrc`] to load in the appropriate vimrc
     ///   during ex mode
     /// * If `allow_zero` is true, then a value of 0 is considered the value of
     ///   the variable rather than vim's default of not being found
     pub fn load(&self, allow_zero: bool) -> io::Result<Option<Value>> {
-        let vimrc = utils::find_vimrc()
+        let vimrc = search::find_vimrc()
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "vimrc not found"))?;
         self.load_with_config(vimrc, allow_zero)
     }

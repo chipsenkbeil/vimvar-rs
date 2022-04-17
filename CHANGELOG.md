@@ -8,6 +8,10 @@
 
 - Support for `init.lua` files for neovim
 
+### Changed
+
+- Refactor `utils::find_vimrc()` to `search::find_vimrc()`
+
 ## [0.2.0] - 2021-05-31
 
 ### Changed
