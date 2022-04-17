@@ -389,7 +389,7 @@ mod tests {
         let config_file = create_file(root.as_ref(), &["_vimrc"]);
 
         let config = TestFindVimrcConfig {
-            vim_env: tempdir_to_cow_str(&root),
+            vim_env: Ok(tempdir_to_cow_str(&root)),
             ..Default::default()
         };
 

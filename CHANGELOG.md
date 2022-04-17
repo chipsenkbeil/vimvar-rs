@@ -4,9 +4,12 @@
 
 ## [Unreleased] - ReleaseDate
 
+## [0.3.0] - 2022-04-17
+
 ### Added
 
 - Support for `init.lua` files for neovim
+- Add explicit testing of `search::find_vimrc()`
 
 ### Changed
 
